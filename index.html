@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#151a22">
+<title>돋보기 공장</title>
+<meta name="description" content="1억 5천만 개 대신 1,728개? — 합성곱 신경망(CNN): 이미지와 채널, 필터와 특징 맵, 패딩·스트라이드·풀링, 가중치 공유, 드롭아웃과 데이터 증강, VGG·ResNet, 전이 학습, IoU와 비전 검사를 손으로 체험하는 앱">
+<style>
+:root{--bg:#151a22;--card:#1c232e;--card2:#25303d;--fg:#eff3f8;--mut:#a3b0c2;--line:#33425a;
+--a:#7cc4ff;--b:#ff9b5c;--ok:#6fdc9a;--bad:#ff7d7d;--gold:#ffd166;--pur:#b79cff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;line-height:1.55}
+[hidden]{display:none!important}
+.wrap{max-width:560px;margin:0 auto;padding:12px 14px 40px}
+h1{font-size:1.2rem;margin:6px 0}
+h1 small{display:block;font-size:.76rem;color:var(--mut);font-weight:400}
+.tabs{display:flex;gap:5px;margin:10px 0}
+.tabs button{flex:1;padding:9px 2px;border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:10px;font-size:.82rem;font-weight:600}
+.tabs button.on{background:#24406e;color:#fff;border-color:var(--a)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+h2{font-size:1rem;margin:2px 0 8px}
+.note{font-size:.86rem;color:var(--mut);margin:8px 0 0}
+.note b{color:var(--fg)}
+.btn{padding:11px 14px;border-radius:12px;border:0;background:linear-gradient(135deg,#2f6fd0,#7cc4ff);color:#fff;font-weight:800;font-size:.95rem;flex:1}
+.btn.sec{background:var(--card2);border:1px solid var(--line);color:var(--fg);font-weight:700}
+.btn.sm{flex:none;padding:7px 11px;font-size:.82rem}
+.btn:disabled{opacity:.4}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row+.row{margin-top:8px}
+.pill{padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--fg);font-size:.84rem}
+.pill.on{border-color:var(--gold);background:#4a3e1a;color:#fff}
+.lbl{font-size:.8rem;color:var(--mut)}
+canvas{display:block;width:100%;border-radius:12px;background:#10141b;margin-top:8px;touch-action:none}
+.say{background:#16304c;border-left:3px solid var(--a);border-radius:8px;padding:9px 11px;font-size:.92rem;margin-top:10px}
+.say b{color:#fff}
+.say.q{border-left-color:var(--b);background:#2e2118}
+.res{margin-top:10px;font-size:.92rem;border-radius:10px;padding:10px 12px}
+.res.g{background:#16352a;border:1px solid #2f7a52}
+.res.r{background:#3a1d1d;border:1px solid #8a3a3a}
+.res.y{background:#3a3218;border:1px solid #8a7a3a}
+.code{background:#0f131a;border:1px solid #26324a;border-radius:10px;padding:9px 11px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem;line-height:1.65;white-space:pre;overflow-x:auto;margin-top:8px}
+.code .k{color:#ff9bd2}.code .s{color:#a5e38a}.code .c{color:#6b7a90}.code .n{color:#ffd166}.code .f{color:#7cc4ff}
+.out{background:#0b0e13;border-radius:10px;padding:8px 11px;margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem;white-space:pre-wrap;word-break:break-all}
+.out .p{color:#6b7a90}.out .o{color:#6fdc9a}.out .w{color:#ffd166}.out .e{color:#ff7d7d}
+.opts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.opts button{text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--fg);font-size:.92rem}
+.opts button.right{border-color:#6fdc9a;background:#16352a}
+.opts button.wrong{border-color:#ff7d7d;background:#3a1d1d}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.stats div{background:var(--card2);border-radius:10px;padding:7px 6px;text-align:center;font-size:.74rem;color:var(--mut)}
+.stats div b{display:block;font-size:1.02rem;color:var(--fg);font-variant-numeric:tabular-nums}
+.sl{display:grid;grid-template-columns:84px 1fr 54px;gap:8px;align-items:center;font-size:.84rem;margin-top:6px}
+.sl b{text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%}
+input[type=text]{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#10141b;color:var(--fg);font-size:.92rem}
+.sum3{margin-top:12px;background:linear-gradient(135deg,#1d3358,#3a2a5a);border-radius:14px;padding:12px 14px}
+.sum3 ol{margin:4px 0;padding-left:20px;font-size:.92rem}
+.mine{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.mine div{display:flex;justify-content:space-between;gap:8px;background:var(--card2);border-radius:10px;padding:8px 10px;font-size:.88rem}
+.mine button{border:0;background:none;color:var(--mut);font-size:.9rem}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#000c;color:#fff;padding:10px 16px;border-radius:999px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+footer{text-align:center;color:var(--mut);font-size:.78rem;margin-top:18px}
+footer a{color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🔍 돋보기 공장<small>1억 5천만 개 대신 1,728개? — 합성곱 신경망 CNN</small></h1>
+<div class="tabs">
+  <button class="on" data-tab="t1">① 합성곱</button>
+  <button data-tab="t2">② 크기·풀링</button>
+  <button data-tab="t3">③ 가중치</button>
+  <button data-tab="t4">④ 깊게·검사</button>
+</div>
+
+<!-- ① -->
+<section id="tab-t1">
+  <div class="card">
+    <h2>🖼️ 사건 접수: 첫 층의 가중치 수</h2>
+    <p class="note" style="margin-top:0">224 × 224 컬러 사진 한 장 = 숫자 <b>150,528개</b>. 첫 층 두 가지를 비교합니다.</p>
+    <canvas id="opCv"></canvas>
+    <div class="say q">완전 연결(뉴런 1,000개)이면 첫 층 가중치만 <b>150,528,000개</b>. 합성곱 첫 층은 <b>1,728개</b>로 시작합니다 — 약 <b>8만 7천분의 1</b>. 비밀은 <b>③ 가중치</b>에서!</div>
+  </div>
+
+  <div class="card">
+    <h2>🔢 숫자 판, 이미지 — 펴면 이웃이 멀어진다</h2>
+    <p class="note" style="margin-top:0">8 × 8 손글씨 판입니다. 칸을 눌러 보세요. 한 줄로 <b>폈을 때</b> 바로 위 칸이 몇 칸 떨어지는지 보여 줍니다.</p>
+    <canvas id="flCv"></canvas>
+    <div id="flMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🔍 작은 돋보기로 훑기: 합성곱</h2>
+    <p class="note" style="margin-top:0">그림 칸을 눌러 0 ↔ 9로 바꿀 수 있습니다. 필터를 고르고 <b>한 칸씩 훑어</b> 보세요.</p>
+    <div class="row"><span class="lbl">그림</span><button class="pill on" data-im="v">세로 경계 (원고)</button><button class="pill" data-im="h">가로 경계</button><button class="pill" data-im="x">대각선</button><button class="pill" data-im="c">십자</button></div>
+    <div class="row"><span class="lbl">필터</span><button class="pill on" data-fl="v">세로 경계</button><button class="pill" data-fl="h">가로 경계</button><button class="pill" data-fl="b">흐리게</button><button class="pill" data-fl="s">날카롭게</button></div>
+    <canvas id="cvCv"></canvas>
+    <div class="row" style="margin-top:8px"><button class="btn" id="cvStep">▶ 한 칸 훑기</button><button class="btn sec sm" id="cvAll">끝까지</button><button class="btn sec sm" id="cvReset">↺</button></div>
+    <div class="out" id="cvOut"></div>
+    <div id="cvMsg"></div>
+  </div>
+</section>
+
+<!-- ② -->
+<section id="tab-t2" hidden>
+  <div class="card">
+    <h2>📏 크기를 정하는 패딩과 스트라이드</h2>
+    <div class="sl"><span>입력 크기 N</span><input type="range" id="szN" min="5" max="32" value="7"><b id="szNv">7</b></div>
+    <div class="sl"><span>필터 K</span><input type="range" id="szK" min="1" max="7" step="2" value="3"><b id="szKv">3</b></div>
+    <div class="sl"><span>패딩 P</span><input type="range" id="szP" min="0" max="3" value="0"><b id="szPv">0</b></div>
+    <div class="sl"><span>스트라이드 S</span><input type="range" id="szS" min="1" max="4" value="1"><b id="szSv">1</b></div>
+    <canvas id="szCv"></canvas>
+    <div class="out" id="szOut"></div>
+    <div class="row" style="margin-top:6px"><button class="btn sec sm" id="szQ">퀴즈 조건으로 (28, 3, 1, 2)</button><button class="btn sec sm" id="szSame">크기 유지 (P=1, K=3, S=1)</button></div>
+  </div>
+
+  <div class="card">
+    <h2>❓ 퀴즈 ①</h2>
+    <div class="say q">28 × 28 입력, 3 × 3 필터, <b>패딩 1</b>, <b>스트라이드 2</b>. 결과 특징 맵의 크기는?</div>
+    <div class="opts" id="qz1"><button data-a="13">13</button><button data-a="14">14</button><button data-a="28">28</button></div>
+    <div id="qz1Msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🏔️ 핵심만 남기는 최대 풀링</h2>
+    <p class="note" style="margin-top:0">4 × 4 특징 맵 → 2 × 2. 강한 신호(9)를 <b>한 칸 옮겨</b> 보세요.</p>
+    <div class="row"><button class="btn sec sm" data-mv="-1">◀ 왼쪽</button><button class="btn sec sm" data-mv="1">오른쪽 ▶</button><button class="btn sec sm" data-mv="-4">▲ 위</button><button class="btn sec sm" data-mv="4">아래 ▼</button><button class="pill on" data-pl="max">최대</button><button class="pill" data-pl="avg">평균</button></div>
+    <canvas id="plCv"></canvas>
+    <div id="plMsg"></div>
+  </div>
+</section>
+
+<!-- ③ -->
+<section id="tab-t3" hidden>
+  <div class="card">
+    <h2>♻️ 첫 장면의 비밀: 돌려 쓰는 가중치</h2>
+    <p class="note" style="margin-top:0">필터 하나를 이미지 <b>전체에 돌려 씁니다</b>. 왼쪽 위의 세로선을 찾는 필터가 오른쪽 아래 세로선도 찾습니다.</p>
+    <div class="sl"><span>사진 크기</span><input type="range" id="wsN" min="28" max="1024" step="4" value="224"><b id="wsNv">224</b></div>
+    <div class="row"><span class="lbl">채널</span><button class="pill" data-ch="1">흑백 1</button><button class="pill on" data-ch="3">컬러 3</button></div>
+    <div class="sl"><span>필터 개수</span><input type="range" id="wsF" min="1" max="128" value="64"><b id="wsFv">64</b></div>
+    <canvas id="wsCv"></canvas>
+    <div class="out" id="wsOut"></div>
+    <div id="wsMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎨 필터의 깊이 = 입력 채널 수</h2>
+    <canvas id="chCv"></canvas>
+    <div class="say">컬러 입력의 3 × 3 필터는 실제로 <b>3 × 3 × 3 = 27개</b>의 숫자로 세 채널을 한꺼번에 봅니다. 숫자는 처음엔 무작위, 학습하며 <b>데이터가 정해 줍니다</b>.</div>
+  </div>
+
+  <div class="card">
+    <h2>❓ 퀴즈 ②</h2>
+    <div class="say q">컬러 입력에 3 × 3 필터 <b>16개</b>. 필터마다 편향 하나씩. 이 층의 가중치와 편향은 모두 몇 개?</div>
+    <div class="opts" id="qz2"><button data-a="144">144</button><button data-a="432">432</button><button data-a="448">448</button></div>
+    <div id="qz2Msg"></div>
+  </div>
+</section>
+
+<!-- ④ -->
+<section id="tab-t4" hidden>
+  <div class="card">
+    <h2>🏗️ 층층이 쌓는 CNN</h2>
+    <canvas id="stCv"></canvas>
+    <div class="say">합성곱 → ReLU → 풀링을 반복하며 앞쪽은 <b>선·모서리</b>, 중간은 <b>무늬·부분</b>, 뒤쪽은 <b>큰 형태</b>를 찾습니다. 작아진 특징 맵을 그제야 펴서 분류기에 넣고 소프트맥스로 확률을 냅니다. 앞부분 = <b>보는 눈(특징 추출부)</b>, 뒷부분 = <b>판단하는 머리(분류기)</b>.</div>
+  </div>
+
+  <div class="card">
+    <h2>🛡️ 외우지 않게: 드롭아웃과 데이터 증강</h2>
+    <div class="row"><button class="btn sec sm" id="doStep">🎲 드롭아웃 한 번 (p = 0.5)</button></div>
+    <canvas id="doCv"></canvas>
+    <div class="row" style="margin-top:8px"><span class="lbl">증강</span><button class="pill on" data-au="orig">원본</button><button class="pill" data-au="rot">회전</button><button class="pill" data-au="flip">뒤집기</button><button class="pill" data-au="bright">밝기</button><button class="pill" data-au="all">섞기</button></div>
+    <canvas id="auCv"></canvas>
+    <div class="say">드롭아웃: 몇 명이 빠져도 일이 돌아가는 팀처럼 <b>특정 뉴런에 기대지 않게</b>. 증강: 컨베이어 위 각도와 조명은 매번 다르니, 같은 불량도 <b>다양한 모습</b>으로 보여 줍니다(가상 제품 그림).</div>
+  </div>
+
+  <div class="card">
+    <h2>📚 더 깊게: VGG와 ResNet</h2>
+    <div class="row"><button class="pill on" data-dp="vgg">VGG: 3×3 두 번</button><button class="pill" data-dp="res">ResNet: 지름길</button></div>
+    <canvas id="dpCv"></canvas>
+    <div class="sl" id="dpSl" hidden><span>층 수</span><input type="range" id="dpN" min="2" max="50" value="20"><b id="dpNv">20</b></div>
+    <div id="dpMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎯 상자 위치는 맞았나: IoU</h2>
+    <p class="note" style="margin-top:0">빨간 상자(정답)는 고정, 파란 상자(예측)를 <b>끌어</b> 보세요.</p>
+    <canvas id="iouCv"></canvas>
+    <div class="stats"><div>겹친 넓이<b id="iouI">-</b></div><div>합친 넓이<b id="iouU">-</b></div><div>IoU<b id="iouV">-</b></div></div>
+    <div class="row" style="margin-top:6px"><button class="btn sec sm" id="iouEx">원고 예 (4×4 두 개, 2×2 겹침)</button></div>
+    <div id="iouMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🏭 비전 검사 라인</h2>
+    <p class="note" style="margin-top:0">카메라 → 크기 맞추기 → CNN 불량 확률 → <b>문턱</b>을 넘으면 밀어내기. 문턱을 바꿔 가며 라인을 돌려 보세요(가상 제품).</p>
+    <div class="sl"><span>불량 문턱</span><input type="range" id="lnT" min="0.1" max="0.9" step="0.05" value="0.5"><b id="lnTv">0.5</b></div>
+    <canvas id="lnCv"></canvas>
+    <div class="row" style="margin-top:8px"><button class="btn" id="lnGo">▶ 제품 20개 검사</button></div>
+    <div class="stats"><div>잡은 불량<b id="lnA">-</b></div><div>놓친 불량<b id="lnB">-</b></div><div>괜히 밀어낸 정상<b id="lnC">-</b></div></div>
+    <div id="lnMsg"></div>
+    <div class="say">불량 사진이 적다면 일반 사진으로 <b>보는 눈</b>을 익힌 모델을 가져와 앞부분은 그대로 두고 마지막 분류기만 다시 학습 — <b>전이 학습(미세 조정)</b>에 데이터 증강을 함께 씁니다.</div>
+  </div>
+
+  <div class="card">
+    <h2>🐍 코드로 보면</h2>
+    <div class="code"><span class="k">import</span> torch.nn <span class="k">as</span> nn
+nn.Conv2d(<span class="n">3</span>, <span class="n">64</span>, kernel_size=<span class="n">3</span>, padding=<span class="n">1</span>)    <span class="c"># 3×3×3×64 = 1,728 (+편향 64)</span>
+nn.Conv2d(<span class="n">3</span>, <span class="n">16</span>, kernel_size=<span class="n">3</span>)              <span class="c"># 432 + 16 = 448</span>
+nn.MaxPool2d(<span class="n">2</span>)                               <span class="c"># 4×4 → 2×2</span>
+nn.Dropout(<span class="n">0.5</span>)
+nn.Linear(<span class="n">150528</span>, <span class="n">1000</span>)                       <span class="c"># 150,528,000 (+편향 1,000)</span>
+<span class="c"># 출력 크기 = (N − K + 2P) // S + 1   →  (28 − 3 + 2) // 2 + 1 = 14</span></div>
+  </div>
+
+  <div class="card">
+    <h2>📌 세 줄 정리</h2>
+    <div class="sum3"><ol>
+      <li>이미지를 <b>펴지 않고</b> 작은 필터로 훑어 <b>특징 맵</b>을 만든다.</li>
+      <li><b>패딩·스트라이드</b>로 크기를, <b>풀링</b>으로 핵심을 정하고, 필터를 <b>돌려 써서</b> 가중치를 아낀다.</li>
+      <li><b>드롭아웃과 증강</b>으로 외우기를 막고, ResNet의 <b>지름길</b>과 <b>전이 학습</b>으로 깊고 똑똑하게 배운다.</li>
+    </ol></div>
+  </div>
+
+  <div class="card">
+    <h2>🤔 생각해 볼 질문</h2>
+    <p class="note" style="margin-top:0">주변에서 사람이 <b>눈으로 하나하나 확인하는 일</b>을 떠올려 보세요. CNN에게 맡긴다면 불량 사진은 몇 장이나 모을 수 있을까요? (이 기기에만 저장)</p>
+    <div class="row" style="margin-top:8px"><input type="text" id="myIn" maxlength="60" placeholder="예: 택배 상자 찌그러짐 — 불량 사진 적음"><button class="btn sm" id="myAdd">추가</button></div>
+    <div class="mine" id="mine"></div>
+  </div>
+</section>
+
+<footer>© 2026 정필 수심명 · <a href="https://blog.naver.com/omyman" target="_blank" rel="noopener">blog.naver.com/omyman</a><br>지능 09 부록 · 인터넷 없이 동작</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),1800);}
+let touched=false;document.addEventListener('pointerdown',()=>{touched=true;},{once:true,capture:true});
+const vib=n=>{if(!touched)return;try{navigator.vibrate&&navigator.vibrate(n);}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function prep(cv,ratio){const dpr=Math.min(2,window.devicePixelRatio||1),w=cv.clientWidth||320,h=Math.round(w*ratio);
+  cv.width=w*dpr;cv.height=h*dpr;cv.style.height=h+'px';const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return{c,w,h};}
+function T(c,s,x,y,col,size,al,bl,wt){c.fillStyle=col;c.font=`${wt||''} ${size||12}px -apple-system,"Malgun Gothic",sans-serif`;c.textAlign=al||'center';c.textBaseline=bl||'middle';c.fillText(s,x,y);}
+function single(sel,attr,fn){$$(sel).forEach(b=>b.onclick=()=>{$$(sel).forEach(x=>x.classList.toggle('on',x===b));fn(b.dataset[attr]);});}
+function quiz(id,ans,fn){$$(`#${id} button`).forEach(b=>b.onclick=()=>{const ok=b.dataset.a===ans;$$(`#${id} button`).forEach(x=>x.className=x.dataset.a===ans?'right':x===b?'wrong':'');vib(ok?[30,40,60]:80);$(`#${id}Msg`).innerHTML=fn(ok);});}
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const CA='#7cc4ff',CB='#ff9b5c',GO='#ffd166';const fmt=n=>Math.round(n).toLocaleString('en-US');
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+const heat=(v,mx)=>{const t=Math.max(-1,Math.min(1,v/(mx||1)));return t>=0?`rgba(255,${Math.round(209-60*t)},${Math.round(102-60*t)},${.15+.85*t})`:`rgba(124,196,255,${.15+.85*-t})`;};
+
+/* ===== ① 첫 장면 ===== */
+function opDraw(){const{c,w,h}=prep($('#opCv'),.5);const fc=150528000,cv=1728;const L=14,R=w-14;
+  [[`완전 연결 (뉴런 1,000개)`,fc,'#ff7d7d',h*.3],[`합성곱 (3×3×3 필터 64개)`,cv,'#6fdc9a',h*.68]].forEach(([nm,v,col,y])=>{T(c,nm,L,y-22,'#eff3f8',12,'left','middle','700');
+    const wbar=(R-L)*Math.log10(v)/Math.log10(fc);c.fillStyle=col;rr(c,L,y-10,wbar,20,8);c.fill();T(c,fmt(v)+'개',Math.min(L+wbar+6,R-90),y,'#fff',13,'left','middle','800');});
+  T(c,'막대 길이는 로그 눈금 (실제 차이는 약 87,111배)',w/2,h-10,'#a3b0c2',10);}
+
+/* ===== ① 펴기 ===== */
+const DIG=[0,0,1,1,1,1,0,0, 0,1,1,0,0,1,1,0, 0,0,0,0,0,1,1,0, 0,0,0,0,1,1,0,0, 0,0,0,1,1,0,0,0, 0,0,1,1,0,0,0,0, 0,1,1,0,0,0,0,0, 0,1,1,1,1,1,1,0];let flSel=27;
+function flDraw(){const{c,w,h}=prep($('#flCv'),.8);const g=Math.min(w*.5,h*.58)/8,ox=12,oy=10;
+  for(let i=0;i<64;i++){const x=ox+(i%8)*g,y=oy+Math.floor(i/8)*g;c.fillStyle=DIG[i]?'#eff3f8':'#25303d';c.fillRect(x+1,y+1,g-2,g-2);if(i===flSel||i===flSel-8){c.strokeStyle=i===flSel?GO:'#ff7d7d';c.lineWidth=3;c.strokeRect(x+2,y+2,g-4,g-4);}}
+  T(c,'2차원 판 (위아래 이웃)',ox,oy+8*g+12,'#a3b0c2',10,'left');
+  /* 한 줄 */const by=h*.86,cw=(w-24)/64;for(let i=0;i<64;i++){c.fillStyle=DIG[i]?'#eff3f8':'#25303d';c.fillRect(12+i*cw,by,Math.max(1,cw-.6),18);}
+  const up=flSel-8;[[flSel,GO],[up,'#ff7d7d']].forEach(([i,col])=>{if(i<0)return;c.strokeStyle=col;c.lineWidth=2;c.strokeRect(12+i*cw-1,by-2,cw+2,22);});
+  if(up>=0){c.strokeStyle='#ff7d7d';c.beginPath();c.moveTo(12+up*cw+cw/2,by-4);c.quadraticCurveTo(12+(up+flSel)/2*cw,by-30,12+flSel*cw+cw/2,by-4);c.stroke();T(c,'8칸 떨어짐',12+(up+flSel)/2*cw,by-30,'#ff7d7d',11,'center','bottom','700');}
+  T(c,'한 줄로 편 64개',12,by+30,'#a3b0c2',10,'left');
+  const tx=ox+8*g+16;T(c,`선택: ${Math.floor(flSel/8)}행 ${flSel%8}열`,tx,oy+14,GO,12,'left','middle','700');T(c,`→ 한 줄 위치 ${flSel}번`,tx,oy+34,'#eff3f8',11,'left');if(up>=0)T(c,`바로 위 칸 → ${up}번`,tx,oy+54,'#ff7d7d',11,'left');
+  $('#flMsg').innerHTML=`<div class="res y">판에서는 바로 붙어 있던 위아래 칸이 한 줄로 펴면 <b>8칸</b>(28×28 손글씨라면 <b>28칸</b>) 떨어집니다. <b>이웃 관계</b>라는 그림의 가장 중요한 정보가 사라지고, 물체가 한 칸만 옮겨 가도 완전히 다른 입력이 됩니다.</div>`;}
+$('#flCv').addEventListener('click',e=>{const r=$('#flCv').getBoundingClientRect(),w=r.width,h=r.height,g=Math.min(w*.5,h*.58)/8;const x=e.clientX-r.left-12,y=e.clientY-r.top-10;const j=Math.floor(x/g),i=Math.floor(y/g);if(i>=0&&i<8&&j>=0&&j<8){flSel=i*8+j;flDraw();vib(10);}});
+
+/* ===== ① 합성곱 ===== */
+const IMS={v:{n:5,f:(i,j)=>j>=3?9:0},h:{n:6,f:(i,j)=>i>=3?9:0},x:{n:6,f:(i,j)=>i===j?9:0},c:{n:7,f:(i,j)=>i===3||j===3?9:0}};
+const FLT={v:[[-1,0,1],[-1,0,1],[-1,0,1]],h:[[-1,-1,-1],[0,0,0],[1,1,1]],b:[[1,1,1],[1,1,1],[1,1,1]],s:[[0,-1,0],[-1,5,-1],[0,-1,0]]};const FNM={v:'세로 경계',h:'가로 경계',b:'흐리게(합)',s:'날카롭게'};
+let cvImK='v',cvFlK='v',cvImg=null,cvPos=-1;
+function cvInit(){const d=IMS[cvImK];cvImg=Array.from({length:d.n},(_,i)=>Array.from({length:d.n},(_,j)=>d.f(i,j)));cvPos=-1;cvDraw();}
+function conv(img,f){const n=img.length,m=n-2,o=[];for(let i=0;i<m;i++){o.push([]);for(let j=0;j<m;j++){let s=0;for(let a=0;a<3;a++)for(let b=0;b<3;b++)s+=img[i+a][j+b]*f[a][b];o[i].push(s);}}return o;}
+function cvDraw(){const n=cvImg.length,m=n-2,f=FLT[cvFlK],O=conv(cvImg,f);const{c,w,h}=prep($('#cvCv'),.62);const g=Math.min((w-60)/(n+m+3.5),(h-30)/n);const ox=8,oy=22,fx=ox+n*g+g*.6,rx=fx+3*g+g*.9;
+  T(c,'입력 (눌러서 0↔9)',ox,10,'#a3b0c2',10,'left');T(c,'필터',fx,10,'#a3b0c2',10,'left');T(c,'특징 맵',rx,10,'#a3b0c2',10,'left');
+  const pi=cvPos>=0?Math.floor(cvPos/m):-9,pj=cvPos>=0?cvPos%m:-9;
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){const v=cvImg[i][j];c.fillStyle=v?'#d9e2ee':'#25303d';c.fillRect(ox+j*g+1,oy+i*g+1,g-2,g-2);T(c,String(v),ox+j*g+g/2,oy+i*g+g/2,v?'#10141b':'#55667f',Math.min(13,g*.42));}
+  if(cvPos>=0){c.strokeStyle=GO;c.lineWidth=3;c.strokeRect(ox+pj*g,oy+pi*g,3*g,3*g);}
+  for(let a=0;a<3;a++)for(let b=0;b<3;b++){const v=f[a][b];c.fillStyle=v>0?'#5a3a24':v<0?'#1d3554':'#25303d';c.fillRect(fx+b*g+1,oy+a*g+1,g-2,g-2);T(c,String(v),fx+b*g+g/2,oy+a*g+g/2,'#eff3f8',Math.min(13,g*.42),'center','middle','700');}
+  const mx=Math.max(1,...O.flat().map(Math.abs));for(let i=0;i<m;i++)for(let j=0;j<m;j++){const k=i*m+j,shown=cvPos<0||k<=cvPos;c.fillStyle=shown?heat(O[i][j],mx):'#1a212c';c.fillRect(rx+j*g+1,oy+i*g+1,g-2,g-2);if(shown)T(c,String(O[i][j]),rx+j*g+g/2,oy+i*g+g/2,'#10141b',Math.min(12,g*.38),'center','middle','800');if(k===cvPos){c.strokeStyle=GO;c.lineWidth=3;c.strokeRect(rx+j*g,oy+i*g,g,g);}}
+  cvDraw.geo={ox,oy,g,n};
+  if(cvPos>=0){const terms=[];let s=0;for(let a=0;a<3;a++)for(let b=0;b<3;b++){const p=cvImg[pi+a][pj+b]*f[a][b];if(cvImg[pi+a][pj+b]&&f[a][b])terms.push(`${cvImg[pi+a][pj+b]}×${f[a][b]}`);s+=p;}
+    $('#cvOut').innerHTML=`<span class="p">위치 (${pi}, ${pj}): 겹친 칸끼리 곱해서 모두 더하기</span>\n${terms.length?terms.join(' + ').replace(/\+ -/g,'− '):'0'} = <span class="w">${s}</span>`;}
+  else $('#cvOut').innerHTML=`<span class="p">${n}×${n} 입력, 3×3 필터, 패딩 0, 스트라이드 1 → ${m}×${m} 특징 맵</span>`;
+  const done=cvPos===m*m-1;
+  $('#cvMsg').innerHTML=done||cvPos<0?(cvImK==='v'&&cvFlK==='v'&&cvPos<0?'':`<div class="res ${cvImK===cvFlK||(cvFlK==='v'&&cvImK==='c')||(cvFlK==='h'&&cvImK==='c')?'g':'y'}">${cvImK==='v'&&cvFlK==='v'?'원고 예: 경계가 걸친 자리에서만 <b>27</b>, 평평한 곳은 <b>0</b> — [0, 27, 27] 세 줄. 세로 경계를 찾아내는 돋보기!':cvFlK==='v'&&cvImK==='h'?'세로 경계 필터는 <b>가로 경계를 못 봅니다</b>(모두 0). 그래서 한 층에 필터를 수십 개 씁니다.':cvFlK==='h'&&cvImK==='v'?'가로 경계 필터는 <b>세로 경계를 못 봅니다</b>.':'필터가 찾는 모양이 있는 자리에서 값이 커집니다 — 이 판이 <b>특징 맵</b>.'}</div>`):'';}
+single('[data-im]','im',v=>{cvImK=v;cvInit();});single('[data-fl]','fl',v=>{cvFlK=v;cvPos=-1;cvDraw();});
+$('#cvStep').onclick=()=>{const m=cvImg.length-2;cvPos=(cvPos+1)%(m*m);cvDraw();vib(10);};
+$('#cvAll').onclick=async()=>{const m=cvImg.length-2;for(let k=Math.max(0,cvPos+1);k<m*m;k++){cvPos=k;cvDraw();await new Promise(r=>setTimeout(r,140));}};
+$('#cvReset').onclick=cvInit;
+$('#cvCv').addEventListener('click',e=>{const r=$('#cvCv').getBoundingClientRect();const{ox,oy,g,n}=cvDraw.geo;const j=Math.floor((e.clientX-r.left-ox)/g),i=Math.floor((e.clientY-r.top-oy)/g);if(i>=0&&i<n&&j>=0&&j<n){cvImg[i][j]=cvImg[i][j]?0:9;cvDraw();vib(10);}});
+
+/* ===== ② 크기 ===== */
+function szDraw(){const N=+$('#szN').value,K=+$('#szK').value,P=+$('#szP').value,S=+$('#szS').value;['szN','szK','szP','szS'].forEach(id=>$('#'+id+'v').textContent=$('#'+id).value);
+  const O=Math.floor((N-K+2*P)/S)+1;const ok=N+2*P>=K;
+  $('#szOut').innerHTML=`출력 = ⌊(N − K + 2P) / S⌋ + 1 = ⌊(${N} − ${K} + ${2*P}) / ${S}⌋ + 1 = ⌊${((N-K+2*P)/S).toFixed(2)}⌋ + 1 = <span class="o">${ok?O:'—'}</span>${ok&&O===N?'  <span class="p">← 크기 유지</span>':''}${ok&&S===2?'  <span class="p">← 스트라이드 2: 약 절반</span>':''}`;
+  const{c,w,h}=prep($('#szCv'),.62);const M=N+2*P,g=Math.min((w-24)*.6/M,(h-20)/M);const ox=8,oy=8;
+  for(let i=0;i<M;i++)for(let j=0;j<M;j++){const pad=i<P||j<P||i>=M-P||j>=M-P;c.fillStyle=pad?'#1a212c':'#25303d';c.fillRect(ox+j*g+.5,oy+i*g+.5,g-1,g-1);if(pad&&g>9){T(c,'0',ox+j*g+g/2,oy+i*g+g/2,'#55667f',Math.min(10,g*.5));}}
+  if(ok){/* 필터가 놓이는 왼쪽 위 위치들 */for(let a=0;a<O;a++)for(let b=0;b<O;b++){c.fillStyle='#ffd166';c.beginPath();c.arc(ox+(b*S+K/2)*g,oy+(a*S+K/2)*g,Math.max(1.5,g*.18),0,7);c.fill();}
+    c.strokeStyle=GO;c.lineWidth=2;c.strokeRect(ox,oy,K*g,K*g);if(O>1){c.strokeStyle='#ffd16688';c.setLineDash([3,2]);c.strokeRect(ox+S*g,oy,K*g,K*g);c.setLineDash([]);}}
+  const rx=ox+M*g+16,rg=Math.min((w-rx-10)/Math.max(O,1),g);if(ok){for(let i=0;i<O;i++)for(let j=0;j<O;j++){c.fillStyle='#1f5a3c';c.fillRect(rx+j*rg+.5,oy+i*rg+.5,rg-1,rg-1);}T(c,`출력 ${O}×${O}`,rx,oy+O*rg+12,'#6fdc9a',11,'left','middle','700');}
+  T(c,`● = 필터 중심 위치 (${S}칸씩 건너뜀)  어두운 테두리 = 패딩 0`,ox,h-6,'#a3b0c2',9,'left','bottom');}
+['szN','szK','szP','szS'].forEach(id=>$('#'+id).oninput=szDraw);
+$('#szQ').onclick=()=>{$('#szN').value=28;$('#szK').value=3;$('#szP').value=1;$('#szS').value=2;szDraw();};$('#szSame').onclick=()=>{$('#szK').value=3;$('#szP').value=1;$('#szS').value=1;szDraw();};
+quiz('qz1','14',ok=>`<div class="res ${ok?'g':'r'}">${ok?'정답!':'정답은 <b>14</b>입니다.'} 28 − 3 + 2 = 27, ÷ 2 = 13.5, 소수점을 버려 13, +1 = <b>14</b>. 패딩 1과 필터 3이 짝을 이루면 크기를 그대로 두고, <b>스트라이드</b>가 크기를 줄이는 역할을 맡습니다. 위에서 "퀴즈 조건으로"를 눌러 확인해 보세요.</div>`);
+
+/* ===== ② 풀링 ===== */
+let plPos=5,plM='max';
+function plDraw(){const base=[1,2,0,1,3,0,1,2,0,1,2,0,2,1,0,1];const A=base.slice();A[plPos]=9;const{c,w,h}=prep($('#plCv'),.5);const g=Math.min(w*.11,h*.2),ox=12,oy=(h-4*g)/2;
+  const cols=['#7cc4ff33','#ff9b5c33','#6fdc9a33','#b79cff33'];
+  for(let i=0;i<4;i++)for(let j=0;j<4;j++){const q=Math.floor(i/2)*2+Math.floor(j/2);c.fillStyle=cols[q];c.fillRect(ox+j*g+1,oy+i*g+1,g-2,g-2);const v=A[i*4+j];T(c,String(v),ox+j*g+g/2,oy+i*g+g/2,v===9?GO:'#eff3f8',15,'center','middle',v===9?'800':'');}
+  T(c,'4×4 특징 맵',ox,oy-10,'#a3b0c2',10,'left');T(c,'→',ox+4*g+24,h/2,'#eff3f8',20);
+  const P=[0,1,2,3].map(q=>{const r0=Math.floor(q/2)*2,c0=(q%2)*2;const vals=[A[r0*4+c0],A[r0*4+c0+1],A[(r0+1)*4+c0],A[(r0+1)*4+c0+1]];return plM==='max'?Math.max(...vals):vals.reduce((a,b)=>a+b,0)/4;});
+  const px=ox+4*g+48,pg=g*1.3;for(let q=0;q<4;q++){c.fillStyle=cols[q].replace('33','88');c.fillRect(px+(q%2)*pg+1,oy+Math.floor(q/2)*pg+1,pg-2,pg-2);T(c,plM==='max'?String(P[q]):P[q].toFixed(2),px+(q%2)*pg+pg/2,oy+Math.floor(q/2)*pg+pg/2,P[q]>=9||(plM==='avg'&&P[q]>2.5)?GO:'#eff3f8',16,'center','middle','800');}
+  T(c,`2×2 ${plM==='max'?'최대':'평균'} 풀링`,px,oy-10,'#a3b0c2',10,'left');
+  const q9=Math.floor(Math.floor(plPos/4)/2)*2+Math.floor((plPos%4)/2);
+  $('#plMsg').innerHTML=`<div class="res g">${plM==='max'?`9가 ${['왼쪽 위','오른쪽 위','왼쪽 아래','오른쪽 아래'][q9]} 구역 안에서 움직이면 결과가 <b>그대로</b>. "찾는 모양이 그 근처 어딘가에 있다"는 <b>존재</b>만 남기니, 물체가 한두 칸 움직여도 결과가 거의 같습니다. 계산량도 <b>1/4</b>.`:'평균 풀링은 구역의 평균 — 강한 신호가 주변 값에 묽어집니다. 그래서 최대 풀링을 가장 많이 씁니다.'}</div>`;}
+$$('[data-mv]').forEach(b=>b.onclick=()=>{const d=+b.dataset.mv,np=plPos+d;if(np<0||np>15||(Math.abs(d)===1&&Math.floor(np/4)!==Math.floor(plPos/4)))return;plPos=np;plDraw();vib(10);});
+single('[data-pl]','pl',v=>{plM=v;plDraw();});
+
+/* ===== ③ 가중치 공유 ===== */
+let wsC=3;
+function wsDraw(){const N=+$('#wsN').value,F=+$('#wsF').value;$('#wsNv').textContent=N;$('#wsFv').textContent=F;const inN=N*N*wsC,fc=inN*1000,cv=3*3*wsC*F;
+  $('#wsOut').innerHTML=`입력 숫자 ${N}×${N}×${wsC} = <span class="w">${fmt(inN)}</span>\n완전 연결(뉴런 1,000) = ${fmt(inN)} × 1,000 = <span class="e">${fmt(fc)}</span>\n합성곱(3×3×${wsC} 필터 ${F}개) = ${3*3*wsC} × ${F} = <span class="o">${fmt(cv)}</span>  <span class="p">(편향 ${F}개 별도)</span>\n비율 약 <span class="w">1 / ${fmt(fc/cv)}</span>`;
+  const{c,w,h}=prep($('#wsCv'),.5);const g=Math.min(w*.5,h*.86)/8,ox=10,oy=8;const r=rng(3);
+  for(let i=0;i<8;i++)for(let j=0;j<8;j++){c.fillStyle=(j===2||j===6)&&i>0&&i<7?'#d9e2ee':'#25303d';c.fillRect(ox+j*g+1,oy+i*g+1,g-2,g-2);}
+  [[1,1],[4,5]].forEach(([a,b],k)=>{c.strokeStyle=k?CB:GO;c.lineWidth=3;c.strokeRect(ox+b*g,oy+a*g,3*g,3*g);});
+  const fx=ox+8*g+20;T(c,'같은 필터 하나',fx,oy+10,'#eff3f8',12,'left','middle','700');for(let a=0;a<3;a++)for(let b=0;b<3;b++){c.fillStyle=b===1?'#5a3a24':'#1d3554';c.fillRect(fx+b*g*.8,oy+24+a*g*.8,g*.8-2,g*.8-2);}
+  T(c,'왼쪽 위 세로선도',fx,oy+24+3*g*.8+14,GO,11,'left');T(c,'오른쪽 아래 세로선도',fx,oy+24+3*g*.8+32,CB,11,'left');T(c,'→ 가중치는 9개뿐',fx,oy+24+3*g*.8+52,'#6fdc9a',11,'left','middle','700');
+  $('#wsMsg').innerHTML=`<div class="res g">사진 크기를 바꿔도 합성곱 가중치 수는 <b>${fmt(cv)}개 그대로</b>(완전 연결은 사진 크기에 비례해 폭증). "같은 모양은 어디에 있어도 같은 모양"이라는 생각을 구조에 새긴 <b>가중치 공유</b>.${N===224&&wsC===3&&F===64?' 원고: 150,528,000 vs 1,728.':''}</div>`;}
+$('#wsN').oninput=wsDraw;$('#wsF').oninput=wsDraw;single('[data-ch]','ch',v=>{wsC=+v;wsDraw();});
+function chDraw(){const{c,w,h}=prep($('#chCv'),.42);const g=Math.min(w/14,h/6);const cols=['#ff7d7d','#6fdc9a','#7cc4ff'],names=['R','G','B'];
+  for(let k=2;k>=0;k--){const ox=14+k*g*.7,oy=12+k*g*.5;for(let a=0;a<3;a++)for(let b=0;b<3;b++){c.fillStyle=cols[k]+'aa';c.fillRect(ox+b*g+1,oy+a*g+1,g-2,g-2);}T(c,names[k],ox+3*g+6,oy+g*.5,cols[k],12,'left','middle','700');}
+  T(c,'3 × 3 × 3 = 27개',w*.62,h*.35,'#eff3f8',16,'center','middle','800');T(c,'세 채널을 한꺼번에 곱해 더해 숫자 하나',w*.62,h*.6,'#a3b0c2',11);}
+quiz('qz2','448',ok=>`<div class="res ${ok?'g':'r'}">${ok?'정답!':'정답은 <b>448</b>입니다.'} 필터 하나 3×3×3 = <b>27</b>개, × 16 = 432, 편향 16개를 더해 <b>448</b>. 채널 셋을 빼먹으면 144(9×16)가 됩니다. 필터의 깊이는 늘 <b>입력 채널 수</b>와 같습니다.</div>`);
+
+/* ===== ④ 층 쌓기 ===== */
+function stDraw(){const{c,w,h}=prep($('#stCv'),.55);const steps=[['입력',224,3,'#eff3f8'],['합성곱+ReLU',224,64,CA],['풀링',112,64,'#b79cff'],['합성곱+ReLU',112,128,CA],['풀링',56,128,'#b79cff'],['…',14,512,'#55667f'],['펴기+분류기',1,1,CB]];
+  const n=steps.length,bw=(w-20)/n;steps.forEach(([nm,s,ch,col],k)=>{const x=10+k*bw+bw/2,sz=k===n-1?bw*.3:Math.max(8,Math.min(bw*.7,s/224*h*.45)),dep=Math.min(18,Math.log2(ch+1)*2.4);
+    for(let d=Math.round(dep/3);d>=0;d--){c.fillStyle=col+'55';c.strokeStyle=col;c.lineWidth=1;c.fillRect(x-sz/2+d*3,h*.42-sz/2-d*3,sz,sz);c.strokeRect(x-sz/2+d*3,h*.42-sz/2-d*3,sz,sz);}
+    T(c,nm,x,h*.42+h*.25,'#eff3f8',9,'center','middle','700');T(c,k===n-1?'확률':`${s}×${s}×${ch}`,x,h*.42+h*.25+13,'#a3b0c2',8);});
+  T(c,'선·모서리 → 무늬·부분 → 큰 형태',w*.42,h-12,GO,11,'center','middle','700');T(c,'정상 0.90 · 크랙 0.07 …',w-12,14,CB,10,'right');
+  c.strokeStyle='#6fdc9a88';c.setLineDash([4,3]);c.strokeRect(6,6,bw*6,h*.78);c.setLineDash([]);T(c,'특징 추출부 (보는 눈)',12,16,'#6fdc9a',10,'left');}
+
+/* 드롭아웃 */
+let doSeed=1,doMask=null;
+function doDraw(){const{c,w,h}=prep($('#doCv'),.45);const layers=[4,6,6,2],xs=layers.map((_,k)=>20+k*(w-40)/(layers.length-1));const r=rng(doSeed*97);const mask=layers.map((n,k)=>Array.from({length:n},()=>k===0||k===layers.length-1||!doMask?true:r()>=.5));
+  const pos=layers.map((n,k)=>Array.from({length:n},(_,i)=>[xs[k],h*.12+(i+.5)*(h*.76)/n]));
+  for(let k=0;k<layers.length-1;k++)pos[k].forEach((a,i)=>pos[k+1].forEach((b,j)=>{const on=mask[k][i]&&mask[k+1][j];c.strokeStyle=on?'#7cc4ff55':'#33425a33';c.lineWidth=on?1.2:.6;c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke();}));
+  pos.forEach((L,k)=>L.forEach(([x,y],i)=>{c.beginPath();c.arc(x,y,9,0,7);c.fillStyle=mask[k][i]?(k===3?CB:CA):'#3a1d1d';c.fill();if(!mask[k][i])T(c,'✕',x,y,'#ff7d7d',11,'center','middle','800');}));
+  T(c,doMask?`학습 단계 ${doSeed}: 숨은 뉴런 중 ✕는 이번엔 쉼`:'모든 뉴런이 일하는 상태 — 버튼을 눌러 보세요',w/2,h-8,'#a3b0c2',10);}
+$('#doStep').onclick=()=>{doMask=true;doSeed++;doDraw();vib(15);};
+
+/* 증강 */
+let auM='orig';
+function drawCan(c,x,y,s,rot,flip,br){c.save();c.translate(x,y);c.rotate(rot);c.scale(flip?-1:1,1);c.filter=`brightness(${br})`;
+  c.fillStyle='#8fa3b8';rr(c,-s*.35,-s*.45,s*.7,s*.9,s*.08);c.fill();c.fillStyle='#c94f4f';c.fillRect(-s*.35,-s*.15,s*.7,s*.3);c.fillStyle='#d9e2ee';c.fillRect(-s*.35,-s*.45,s*.7,s*.06);
+  c.strokeStyle='#10141b';c.lineWidth=2.5;c.beginPath();c.moveTo(s*.1,-s*.38);c.lineTo(s*.18,-s*.25);c.lineTo(s*.12,-s*.12);c.lineTo(s*.22,0);c.stroke();T(c,'',0,0,'#000',1);c.restore();}
+function auDraw(){const{c,w,h}=prep($('#auCv'),.4);const n=auM==='all'?5:1,r=rng(11);for(let k=0;k<n;k++){const x=n===1?w/2:w*(k+.5)/n,s=n===1?h*.8:Math.min(h*.75,w/n*.9);
+    const rot=auM==='rot'?.35:auM==='all'?(r()-.5)*.9:0,flip=auM==='flip'||(auM==='all'&&r()<.5),br=auM==='bright'?1.6:auM==='all'?.6+r()*.9:1;drawCan(c,x,h/2,s,rot,flip,br);}
+  T(c,'가상의 캔 (검은 선 = 크랙)',8,10,'#a3b0c2',10,'left');}
+single('[data-au]','au',v=>{auM=v;auDraw();});
+
+/* VGG / ResNet */
+let dpM='vgg';
+function dpDraw(){$('#dpSl').hidden=dpM!=='res';const{c,w,h}=prep($('#dpCv'),.52);
+  if(dpM==='vgg'){const g=Math.min(w/16,h/7);const ox=w*.06,oy=h*.12;for(let i=0;i<5;i++)for(let j=0;j<5;j++){c.fillStyle='#25303d';c.fillRect(ox+j*g+1,oy+i*g+1,g-2,g-2);}
+    c.strokeStyle=CA;c.lineWidth=3;c.strokeRect(ox+g,oy+g,3*g,3*g);c.strokeStyle=GO;c.strokeRect(ox,oy,5*g,5*g);c.fillStyle='#6fdc9a';c.fillRect(ox+2*g+3,oy+2*g+3,g-6,g-6);
+    T(c,'3×3을 두 번 → 5×5 범위',ox+2.5*g,oy+5*g+16,'#eff3f8',11,'center','middle','700');
+    const bx=w*.58;[[`3×3 두 번`,18,'#6fdc9a'],[`5×5 한 번`,25,'#ff7d7d']].forEach(([nm,v,col],k)=>{const y=h*.3+k*h*.3;T(c,nm,bx,y-14,'#eff3f8',12,'left','middle','700');c.fillStyle=col;c.fillRect(bx,y,(w-bx-14)*v/25,16);T(c,v+'개',bx+(w-bx-14)*v/25-4,y+8,'#10141b',11,'right','middle','800');});
+    $('#dpMsg').innerHTML='<div class="res g"><b>VGG</b>: 작은 3×3 필터만 깊게. 두 번 거치면 5×5 범위를 보는데 가중치는 25개 대신 <b>18개</b>(채널 1 기준), 사이에 ReLU가 하나 더 들어가 표현력도 늘어납니다.</div>';}
+  else{const n=+$('#dpN').value;$('#dpNv').textContent=n;const bw=Math.min(40,(w-40)/6);const y=h*.32;for(let k=0;k<3;k++){const x=20+k*(bw+22);c.fillStyle='#24406e';rr(c,x,y-16,bw,32,6);c.fill();T(c,'층',x+bw/2,y,'#eff3f8',11);if(k<2){c.strokeStyle='#55667f';c.beginPath();c.moveTo(x+bw,y);c.lineTo(x+bw+22,y);c.stroke();}}
+    c.strokeStyle='#6fdc9a';c.lineWidth=2.5;c.beginPath();c.moveTo(14,y);c.bezierCurveTo(14,y-50,20+2*(bw+22),y-50,20+2*(bw+22)-4,y-18);c.stroke();T(c,'+ x (지름길)',20+(bw+22),y-44,'#6fdc9a',11,'center','middle','700');
+    T(c,'출력 = F(x) + x',w*.78,y,'#eff3f8',14,'center','middle','800');
+    const L=20,R=w-14,Tp=h*.6,B=h-18;const sy=v=>B-v*(B-Tp);c.strokeStyle='#33425a';c.beginPath();c.moveTo(L,B);c.lineTo(R,B);c.stroke();
+    [[k=>Math.pow(.25,k),'#ff7d7d','지름길 없음 (0.25씩 곱해짐)'],[k=>Math.pow(.95,k),'#6fdc9a','지름길 있음 (거의 그대로 전달)']].forEach(([f,col,nm],j)=>{c.strokeStyle=col;c.lineWidth=2;c.beginPath();for(let k=0;k<=n;k++){const x=L+k/n*(R-L);k?c.lineTo(x,sy(f(k))):c.moveTo(x,sy(f(k)));}c.stroke();T(c,nm,R,Tp-4+j*13,col,10,'right','bottom');});
+    T(c,`앞쪽까지 오는 기울기 (층 ${n}개)`,L,B+12,'#a3b0c2',9,'left');
+    $('#dpMsg').innerHTML=`<div class="res g">너무 깊으면 기울기가 층을 거슬러 오며 사라져(${n}층 × 0.25 → ${Math.pow(.25,n).toExponential(1)}) 학습이 안 됐습니다. <b>ResNet</b>은 입력을 몇 층 건너뛰어 출력에 <b>그대로 더하는 지름길</b>을 내, 층은 입력과의 <b>차이만</b> 배우면 됩니다 — 백 층이 넘어도 학습됩니다. (곡선은 원리를 보이는 그림이며 실제 수치는 아님)</div>`;}}
+single('[data-dp]','dp',v=>{dpM=v;dpDraw();});$('#dpN').oninput=dpDraw;
+
+/* IoU */
+let ib={x:6,y:6};const IA={x:4,y:4,s:4};const IS=4;
+function iouDraw(){const{c,w,h}=prep($('#iouCv'),.6);const G=14,g=Math.min(w/G,h/(G*.6));const ox=(w-G*g)/2,oy=4;
+  c.strokeStyle='#1f2a38';for(let i=0;i<=G;i++){c.beginPath();c.moveTo(ox+i*g,oy);c.lineTo(ox+i*g,oy+8.4*g);c.stroke();}for(let i=0;i<=8;i++){c.beginPath();c.moveTo(ox,oy+i*g);c.lineTo(ox+G*g,oy+i*g);c.stroke();}
+  const ix=Math.max(0,Math.min(IA.x+IA.s,ib.x+IS)-Math.max(IA.x,ib.x)),iy=Math.max(0,Math.min(IA.y+IA.s,ib.y+IS)-Math.max(IA.y,ib.y));const I=ix*iy,U=32-I,v=I/U;
+  if(I>0){c.fillStyle='#ffd16677';c.fillRect(ox+Math.max(IA.x,ib.x)*g,oy+Math.max(IA.y,ib.y)*g-(4)*g+4*g,ix*g,iy*g);}
+  c.strokeStyle='#ff7d7d';c.lineWidth=3;c.strokeRect(ox+IA.x*g,oy+IA.y*g-4*g+4*g,IS*g,IS*g);c.strokeStyle=CA;c.strokeRect(ox+ib.x*g,oy+ib.y*g,IS*g,IS*g);
+  T(c,'정답',ox+IA.x*g+4,oy+IA.y*g+10,'#ff7d7d',10,'left');T(c,'예측 (끌기)',ox+ib.x*g+4,oy+(ib.y+IS)*g-8,CA,10,'left');
+  iouDraw.geo={ox,oy,g};$('#iouI').textContent=I;$('#iouU').textContent=U;$('#iouV').textContent=v.toFixed(2);$('#iouV').style.color=v>=.5?'#6fdc9a':'#ff7d7d';
+  $('#iouMsg').innerHTML=`<div class="res ${v>=.5?'g':'r'}">IoU = 겹친 넓이 ÷ 합친 넓이 = ${I} ÷ (16 + 16 − ${I}) = <b>${v.toFixed(2)}</b>. ${I===4?'원고 예: 4 ÷ 28 = 0.14, 거의 못 맞힌 것.':v>=.5?'보통 0.5 이상이면 맞힌 것으로 칩니다.':'0.5 미만이면 위치를 못 맞힌 것으로 봅니다.'}</div>`;}
+(()=>{const cv=$('#iouCv');let dg=false,off=null;const cell=e=>{const r=cv.getBoundingClientRect(),{ox,oy,g}=iouDraw.geo;return[(e.clientX-r.left-ox)/g,(e.clientY-r.top-oy)/g];};
+  cv.addEventListener('pointerdown',e=>{const[x,y]=cell(e);if(x>=ib.x&&x<=ib.x+IS&&y>=ib.y&&y<=ib.y+IS){dg=true;off=[x-ib.x,y-ib.y];cv.setPointerCapture(e.pointerId);}});
+  cv.addEventListener('pointermove',e=>{if(!dg)return;const[x,y]=cell(e);ib.x=Math.max(0,Math.min(10,Math.round(x-off[0])));ib.y=Math.max(0,Math.min(4,Math.round(y-off[1])));iouDraw();});
+  const up=()=>dg=false;cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);})();
+$('#iouEx').onclick=()=>{ib={x:6,y:6};iouDraw();};
+
+/* 비전 검사 라인 */
+const LN=(()=>{const r=rng(2026),a=[];for(let i=0;i<20;i++){const bad=r()<.3;let p=bad?.45+r()*.5:r()*.55;a.push({bad,p:Math.round(p*100)/100});}return a;})();let lnRes=null,lnBusy=false;
+let lnK=-1;
+function lnDraw(k){if(k!=null)lnK=k;const t=+$('#lnT').value;$('#lnTv').textContent=t;const{c,w,h}=prep($('#lnCv'),.5);
+  const L=40,R=w-12,yRej=h*.3,yPass=h*.72,dx=(R-L)/20;
+  c.fillStyle='#3a1d1d';c.fillRect(L-6,yRej-16,R-L+12,32);c.fillStyle='#16352a';c.fillRect(L-6,yPass-16,R-L+12,32);
+  T(c,'⤴ 밀어냄',4,yRej,'#ff7d7d',10,'left');T(c,'통과 →',4,yPass,'#6fdc9a',10,'left');
+  for(let i=0;i<=lnK&&i<20;i++){const it=LN[i],rej=it.p>=t,x=L+(i+.5)*dx,y=rej?yRej:yPass;c.beginPath();c.arc(x,y,Math.min(9,dx*.4),0,7);c.fillStyle=it.bad?'#ff7d7d':'#8fa3b8';c.fill();
+    if((it.bad&&!rej)||(!it.bad&&rej)){c.strokeStyle=GO;c.lineWidth=2;c.stroke();}if(i===lnK&&lnBusy)T(c,it.p.toFixed(2),x,y-16,GO,10,'center','middle','700');}
+  T(c,'● 빨강 = 실제 불량  ● 회색 = 실제 정상  노란 테두리 = 판정 틀림',w/2,h-8,'#a3b0c2',9);}
+$('#lnT').oninput=()=>{lnDraw();if(lnRes)lnSum();};
+function lnSum(){const t=+$('#lnT').value;let A=0,B=0,C=0;LN.forEach(it=>{const rej=it.p>=t;if(it.bad&&rej)A++;else if(it.bad)B++;else if(rej)C++;});const nb=LN.filter(x=>x.bad).length;$('#lnA').textContent=`${A}/${nb}`;$('#lnB').textContent=B;$('#lnC').textContent=C;
+  $('#lnMsg').innerHTML=`<div class="res ${B===0&&C<=2?'g':'y'}">문턱 ${t}: ${B?`불량 <b>${B}개를 놓쳤고</b>`:'불량을 모두 잡았고'}, 정상 ${C}개를 괜히 밀어냈습니다. 문턱을 낮추면 놓치는 불량은 줄지만 괜히 버리는 정상이 늘고, 높이면 반대입니다(가상 확률값).</div>`;}
+$('#lnGo').onclick=async()=>{if(lnBusy)return;lnBusy=true;for(let k=0;k<20;k++){lnDraw(k);await new Promise(r=>setTimeout(r,160));}lnBusy=false;lnDraw(19);lnRes=true;lnSum();vib(20);};
+
+/* 나의 예 */
+const MK='convscope.mine';let mine=[];try{mine=JSON.parse(localStorage.getItem(MK)||'[]');if(!Array.isArray(mine))mine=[];}catch(e){mine=[];}
+const saveM=()=>{try{localStorage.setItem(MK,JSON.stringify(mine));}catch(e){}};
+function drawMine(){$('#mine').innerHTML=mine.length?mine.map((m,i)=>`<div><span>🔍 ${esc(m)}</span><button data-d="${i}" aria-label="지우기">✕</button></div>`).join(''):'<p class="note">부족한 불량 사진을 증강과 전이 학습으로 어떻게 채울지가 설계의 시작입니다.</p>';
+  $$('#mine button').forEach(b=>b.onclick=()=>{mine.splice(+b.dataset.d,1);saveM();drawMine();});}
+$('#myAdd').onclick=()=>{const v=$('#myIn').value.trim();if(!v)return;mine.unshift(v);mine=mine.slice(0,30);saveM();$('#myIn').value='';drawMine();toast('검사 후보 기록!');};
+$('#myIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('#myAdd').click();});
+
+/* 탭 */
+function redraw(){if(!$('#tab-t1').hidden){opDraw();flDraw();cvDraw();}if(!$('#tab-t2').hidden){szDraw();plDraw();}if(!$('#tab-t3').hidden){wsDraw();chDraw();}if(!$('#tab-t4').hidden){stDraw();doDraw();auDraw();dpDraw();iouDraw();lnDraw();}}
+function show(t){$$('.tabs button').forEach(x=>x.classList.toggle('on',x.dataset.tab===t));['t1','t2','t3','t4'].forEach(k=>$('#tab-'+k).hidden=k!==t);redraw();window.scrollTo(0,0);}
+$$('.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(redraw,120);});
+cvInit();drawMine();redraw();
+})();
+</script>
+</body>
+</html>
